@@ -2,10 +2,7 @@ package com.example.test.sql.Services;
 
 import com.example.test.sql.Entities.User;
 import com.example.test.sql.Repositories.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -17,8 +14,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
@@ -32,22 +29,25 @@ public class UserServiceTest {
     private List<User> users = new ArrayList<>();
 
     @BeforeEach
-    void setUp() {
-        users.add(new User("1", "last", "0928970717", 23));
-        users.add(new User("2", "last", "0928970717", 23));
-        users.add(new User("3", "last", "0928970717", 23));
-        users.add(new User("5", "last", "0928970717", 23));
+    public void setUp() {
+        // a known set of hardcoded plants.
+        List<User> users = createUsers();
+        // tell the mock object to return our known set of hardcoded plants, when requested.
+        lenient().when(userRepository.findAll()).thenReturn(users);
+
+        // associate the mock object with the obejct we are testing.
+//        userRepository.saveAll(users);
+
     }
 
     @Test
     @DisplayName("test get User")
     void getUser() {
-        User user = new User("1", "last", "0928970717", 23);
-        given(userRepository.findOneById(user.getId())).willReturn(users.get(user.getId()));
-        User getUser = userService.get(user.getId());
+        given(userRepository.findOneById(1)).willReturn(users.stream().filter(u -> u.getId() == 1).findFirst().get());
+        User getUser = userService.get(1);
 
         assertThat(getUser).isNotNull();
-        verify(userRepository).findOneById(user.getId());
+        verify(userRepository).findOneById(1);
     }
 
     @Test
@@ -55,6 +55,7 @@ public class UserServiceTest {
     void create() {
         User user = new User("lucky", "eiei", "0928970717", 20);
         given(userRepository.save(user)).willAnswer(invocation -> invocation.getArgument(0));
+
         User savedUser = userService.create(user);
 
         assertThat(savedUser.getFirstName()).isNotNull();
@@ -64,10 +65,9 @@ public class UserServiceTest {
     @Test
     @DisplayName("test delete User")
     void delete() {
-        User user = new User("lucky", "eiei", "0928970717", 20);
-        userService.delete(user.getId());
+        userService.delete(1);
 
-        verify(userRepository, times(1)).deleteById(user.getId());
+        verify(userRepository, times(1)).deleteById(1);
     }
 
     @Test
@@ -80,5 +80,15 @@ public class UserServiceTest {
 
         assertThat(getUser).isNotNull();
         verify(userRepository).findOneById(0);
+    }
+
+    private List<User> createUsers() {
+        for (int i = 0 ; i <= 5 ; i++) {
+            User user = new User( "firstname " + i+1, "lastname " + i+1, "0928970717", 23 + i);
+            user.setId(i+1);
+            users.add(user);
+        }
+
+        return users;
     }
 }
